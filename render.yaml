@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: priyabot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: >
+      python -c "from bot import setup_webhook; setup_webhook()" &&
+      gunicorn bot:flask_app
+        --workers 2
+        --worker-class sync
+        --bind 0.0.0.0:$PORT
+        --timeout 120
+        --keep-alive 5
+        --log-level info
+        --access-logfile -
+        --error-logfile -
+    healthCheckPath: /health
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: ADMIN_CHAT_ID
+        sync: false
+      - key: UPI_ID
+        sync: false
+      - key: RENDER_APP_NAME
+        sync: false
+      - key: WEBHOOK_SECRET
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: PORT
+        value: 10000
+    disk:
+      name: priyabot-logs
+      mountPath: /app/logs
+      sizeGB: 1
