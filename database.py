@@ -72,15 +72,16 @@ def get_or_create_user(
     if result.data:
         return result.data[0]
 
-    # Create new user
+    # Create new user — 1500 free messages on sign-up
     row = {
         "chat_id": chat_id,
         "username": username or "",
         "first_name": first_name or "",
         "is_subscribed": False,
         "subscription_end": None,
-        "messages_remaining": 0,
+        "messages_remaining": 1500,
         "total_messages_used": 0,
+        "language": None,           # set after /start language picker
         "created_at": _now_utc(),
         "updated_at": _now_utc(),
     }
@@ -104,7 +105,23 @@ def get_user(chat_id: int) -> Optional[dict]:
     return result.data[0] if result.data else None
 
 
-def is_subscribed(chat_id: int) -> bool:
+def set_user_language(chat_id: int, language: str) -> None:
+    """Save the user's chosen language preference."""
+    db = get_client()
+
+    def _update():
+        return (
+            db.table("users")
+            .update({"language": language, "updated_at": _now_utc()})
+            .eq("chat_id", chat_id)
+            .execute()
+        )
+
+    _retry(_update)
+    log.info("Language set: chat_id=%s  lang=%s", chat_id, language)
+
+
+
     user = get_user(chat_id)
     if not user:
         return False
